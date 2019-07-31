@@ -5,9 +5,9 @@ import java.util.Vector;
 
 public class DataHandler {
     Connection connection = null;
-    String url = "jdbc:mysql://db4free.net:3306/oskartestingq1";
-    String user = "oskart20";
-    String password = "O05skar11";
+    String url = "";
+    String user = "";
+    String password = "";
 
 
     public TableModel bookData(TableModel model, int id) throws SQLException {
