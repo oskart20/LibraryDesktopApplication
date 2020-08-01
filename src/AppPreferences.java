@@ -6,13 +6,11 @@ import java.io.*;
 public class AppPreferences {
 
     Gson gson = new Gson();
-    String filePath = "/Users/oskarhaeter/IdeaProjects/LibraryDesktop/resources/deposit.json";
-
+    String filePath = "/resources/deposit.json";
 
     public void storeUserData(User user) {
         try {
             FileWriter writer = new FileWriter(new File(filePath));
-            writer.write("{}");
             writer.write(gson.toJson(user));
             writer.close();
             System.out.println("printed");
@@ -34,7 +32,7 @@ public class AppPreferences {
     }
 
     public String getPassword(){
-        User json = null;
+        User json;
         Encrypted encrypted;
         JsonReader reader = null;
         try {
@@ -47,14 +45,15 @@ public class AppPreferences {
         return (encrypted.password);
     }
 
-
     public boolean testFile(){
         File file = new File(filePath);
-        if(file.length()<=3){
-            return true;
-        } else {
-            return false;
-        }
+        return file.length()>2;
+    }
+
+    public boolean fetchUserData(){
+        File file = new File(filePath);
+
+        return false;
     }
 
     public static class User {
@@ -71,6 +70,7 @@ public class AppPreferences {
         }
 
     }
+
     public static class Encrypted {
         private String password;
         private String salt;

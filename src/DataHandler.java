@@ -3,27 +3,21 @@ import javax.swing.table.TableModel;
 import java.sql.*;
 import java.util.Vector;
 
-public class DataHandler {
+public class DataHandler implements Runnable {
     Connection connection = null;
     String url = "";
     String user = "";
     String password = "";
 
 
-    public TableModel bookData(TableModel model, int id) throws SQLException {
-        Vector<Vector<Object>> data = new Vector<>();
+    public TableModel bookData(TableModel model, int id) {
         TableModel tableModel = model;
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(url, user, password);
-            System.out.println("Connection successful");
-
             Statement stmt=connection.createStatement();
             ResultSet rs=stmt.executeQuery("SELECT Books.ISBN, Title, Author, ReleaseDate, Pagecount FROM Books, Relationship WHERE Relationship.ISBN=Books.ISBN AND Relationship.ID="+id+" GROUP BY Books.ISBN;");
             tableModel = buildTableModel(rs);
-            connection.close();
-        } catch(Exception e) {
-            System.out.println(e);
+        }   catch(Exception e) {
+            System.out.println("bookData(): " + e);
         }
         return tableModel;
     }
@@ -34,16 +28,16 @@ public class DataHandler {
         ResultSetMetaData metaData = rs.getMetaData();
 
         // names of columns
-        Vector<String> columnNames = new Vector<String>();
+        Vector<String> columnNames = new Vector<>();
         int columnCount = metaData.getColumnCount();
         for (int column = 1; column <= columnCount; column++) {
             columnNames.add(metaData.getColumnName(column));
         }
 
         // data of the table
-        Vector<Vector<Object>> data = new Vector<Vector<Object>>();
+        Vector<Vector<Object>> data = new Vector<>();
         while (rs.next()) {
-            Vector<Object> vector = new Vector<Object>();
+            Vector<Object> vector = new Vector<>();
             for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
                 vector.add(rs.getObject(columnIndex));
             }
@@ -52,56 +46,56 @@ public class DataHandler {
         return new DefaultTableModel(data, columnNames);
     }
 
-    public void insertUserData(String name, String forename, String eMail, String userPassword, String salt) throws ClassNotFoundException, SQLException {
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        connection = DriverManager.getConnection(url, user, password);
-        System.out.println("Connection successful");
-        int result;
-        Statement stmt=connection.createStatement();
-        stmt.executeUpdate("INSERT INTO User (Name, Forename, EMail, Password, Salt) VALUES ('"+name+"', '"+forename+"', '"+eMail+"', '"+userPassword+"', '"+salt+"');");
-        connection.close();
-        //todo: pop up message "the user was successfully registered" and sign the user in
+    public void insertUserData(String name, String forename, String eMail, String userPassword, String salt){
+        try {
+            Statement stmt=connection.createStatement();
+            stmt.executeUpdate("INSERT INTO User (Name, Forename, EMail, Password, Salt) VALUES ('"+name+"', '"+forename+"', '"+eMail+"', '"+ userPassword +"', '"+salt+"');");
+        }   catch(Exception e) {
+            System.out.println("insertUserData(): " + e);
+        }
     }
 
     public void importBook(String isbn, int id){
         String[] data = new Json(isbn).getGsonBookData();
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(url, user, password);
-            System.out.println("Connection successful");
             if(checkISBN(isbn)){
                 Statement stmt = connection.createStatement();
                 stmt.executeUpdate("INSERT INTO Books (ISBN, Title, Author, ReleaseDate, Pagecount) VALUES ("+isbn+", '"+data[0]+"', '"+data[1]+"', '"+data[2]+"', "+data[3]+");");
             }
-            Statement statement = connection.createStatement();
-            statement.executeUpdate("INSERT INTO Relationship (ID, ISBN, Number) VALUES ("+id+", "+isbn+", 1);");
+            if(checkExistence(isbn, id)) {
+                Statement statement = connection.createStatement();
+                statement.executeUpdate("INSERT INTO Relationship (ID, ISBN, Number) VALUES (" + id + ", " + isbn + ", 1);");
+            }
             //todo: increase number by 1
-            connection.close();
         }   catch(Exception e) {
             System.out.println("importBook(): " + e);
         }
     }
 
-    public boolean checkISBN(String isbn){
+    private boolean checkExistence(String isbn, int id) {
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(url, user, password);
-            System.out.println("checkISBN(): Connection successful");
             Statement stmt=connection.createStatement();
-            ResultSet rs=stmt.executeQuery("SELECT COUNT(ISBN) FROM Books WHERE ISBN='"+isbn+"';");
+            ResultSet rs=stmt.executeQuery(String.format("SELECT COUNT(ISBN) FROM Relationship WHERE ISBN='%1$s' AND ID=%2$d;", isbn, id));
             if (rs.next()) {
-                if(rs.getInt(1)==0){
-                    return true;
-                } else {
-                    return false;
-                }
+                return rs.getInt(1) == 0;
             } else {
                 return true;
             }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }   catch(Exception e) {
+            System.out.println("checkExistence(): " + e);
+        }
+        return true;
+    }
+
+    public boolean checkISBN(String isbn){
+        try {
+            Statement stmt=connection.createStatement();
+            ResultSet rs=stmt.executeQuery(String.format("SELECT COUNT(ISBN) FROM Books WHERE ISBN='%s';", isbn));
+            if (rs.next()) {
+                return rs.getInt(1) == 0;
+            }
+        }   catch(Exception e) {
+            System.out.println("checkISBN(): " + e);
         }
         return true;
     }
@@ -109,33 +103,23 @@ public class DataHandler {
     public int getId(String email, String passwordUser){
         int id=0;
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(url, user, password);
-            System.out.println("Connection successful");
-
             Statement stmt=connection.createStatement();
-            ResultSet rs=stmt.executeQuery("SELECT ID FROM User WHERE EMail='"+email+"' AND Password='"+passwordUser+"';");
+            ResultSet rs=stmt.executeQuery("SELECT ID FROM User WHERE EMail='"+email+"' AND Password='"+ passwordUser +"';");
             if (rs.next()) {
                 id = rs.getInt(1);
             } else {
                 return 0;
             }
 
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }   catch(Exception e) {
+            System.out.println("getId(): " + e);
         }
         return id;
     }
 
-    public String getSalt(String name,String email){
+    public String getSalt(String name, String email){
         String salt = null;
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(url, user, password);
-            System.out.println("Connection successful");
-
             Statement stmt=connection.createStatement();
             ResultSet rs=stmt.executeQuery("SELECT Salt FROM User WHERE EMail='"+email+"' AND Name='"+name+"';");
             if (rs.next()) {
@@ -144,22 +128,15 @@ public class DataHandler {
                 return null;
             }
 
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }   catch(Exception e) {
+            System.out.println("getSalt(): " + e);
         }
-
         return salt;
     }
 
     public String getName(String email){
         String name = null;
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(url, user, password);
-            System.out.println("Connection successful");
-
             Statement stmt=connection.createStatement();
             ResultSet rs=stmt.executeQuery("SELECT Name FROM User WHERE EMail='"+email+"';");
             if (rs.next()) {
@@ -167,23 +144,15 @@ public class DataHandler {
             } else {
                 return null;
             }
-
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }   catch(Exception e) {
+            System.out.println("getName(): " + e);
         }
-
         return name;
     }
 
     public String getForename(String email){
         String forename = null;
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(url, user, password);
-            System.out.println("Connection successful");
-
             Statement stmt=connection.createStatement();
             ResultSet rs=stmt.executeQuery("SELECT Forename FROM User WHERE EMail='"+email+"';");
             if (rs.next()) {
@@ -191,64 +160,59 @@ public class DataHandler {
             } else {
                 return null;
             }
-
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }   catch(Exception e) {
+            System.out.println("getForename(): " + e);
         }
-
         return forename;
     }
 
-
-    public boolean checkUserLogin(String email, String passwordUser){
+    public char[] getPassword(String name, String email){
+        char[] passwordReturn = null;
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(url, user, password);
-            System.out.println("Connection successful");
-
             Statement stmt=connection.createStatement();
-            ResultSet rs=stmt.executeQuery("SELECT COUNT(EMail) FROM User WHERE EMail='"+email+"' AND Password='"+passwordUser+"';");
+            ResultSet rs=stmt.executeQuery("SELECT Password FROM User WHERE EMail='"+email+"' AND Name='"+name+"';");
             if (rs.next()) {
-                if(rs.getInt(1)==1){
-                    return true;
-                } else {
-                    return false;
-                }
+                passwordReturn = rs.getString(1).toCharArray();
             } else {
-                return false;
+                return null;
             }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }   catch(Exception e) {
+            System.out.println("getPassword(): " + e);
         }
-        return false;
+        return passwordReturn;
     }
 
     public boolean checkUserAvailability(String eMail, String name){
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(url, user, password);
-            System.out.println("Connection successful");
-
             Statement stmt=connection.createStatement();
             ResultSet rs=stmt.executeQuery("SELECT COUNT(EMail) FROM User WHERE EMail='"+eMail+"' AND Name='"+name+"';");
             if (rs.next()) {
-                if(rs.getInt(1)==0){
-                    return true;
-                } else {
-                    return false;
-                }
+                return rs.getInt(1) == 0;
             } else {
                 return false;
             }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }   catch(Exception e) {
+            System.out.println("checkUserAvailability(): " + e);
         }
         return false;
+    }
+
+    @Override
+    public void run() {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            connection = DriverManager.getConnection(url, user, password);
+            System.out.println("Connection successful");
+        }   catch(Exception e) {
+            System.out.println("checkUserAvailability(): " + e);
+        }
+    }
+
+    public void close() {
+        try {
+            connection.close();
+        }   catch(Exception e) {
+            System.out.println("checkUserAvailability(): " + e);
+        }
     }
 }

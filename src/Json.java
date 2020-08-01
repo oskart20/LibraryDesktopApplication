@@ -25,6 +25,7 @@ public class Json {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+        System.out.println(out[0]);
         return out;
     }
 

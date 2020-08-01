@@ -10,13 +10,48 @@ import static java.awt.Font.*;
 import static java.awt.Font.MONOSPACED;
 
 public class Main {
-    JTextField t1 = new JTextField("", 100);
-    JButton b2 = new JButton("search");
-    JButton b3 = new JButton("filter");
+    DataHandler handler = new DataHandler();
+    AppPreferences jsonCompiler = new AppPreferences();
+    int id;
 
-    JMenuBar menuBar;
-    JMenu menu;
-    JMenuItem menuItem;
+    // layout assets
+    GridBagConstraints c;
+    CardLayout cl;
+
+    // fonts
+    Font f;
+
+    // welcomeScreen assets
+    JPanel welcome;
+    JButton welcomeRegisterButton;
+    JButton welcomeLoginButton;
+
+    // register assets
+    JPanel registerPanel;
+    JButton registerButton;
+    JTextField registerNameTextField;
+    JTextField registerForenameTextField;
+    JTextField registerEMailTextField;
+    JPasswordField registerPasswordField;
+    JButton registerCancelButton;
+
+    static AppPreferences deposit = new AppPreferences();
+    AppPreferences.User user;
+    AppPreferences.Encrypted encrypted;
+    PasswordEncryptionService security = new PasswordEncryptionService();
+
+    // register data assets
+    String registerForename;
+    String registerName;
+    String registerEMail;
+
+    // main assets
+    JPanel mainPanel;
+    JPanel menuPanel;
+    JButton menuBooks;
+    JButton menuImport;
+    JTextField searchTextField = new JTextField("", 100);
+    JButton searchButton = new JButton("search");
 
     JTable table;
     JScrollPane scrollPane;
@@ -25,185 +60,383 @@ public class Main {
             "Title",
             "Author",
             "Releasedate",
-            "Pagecount"};
+            "Pagecount"
+    };
 
-    DataHandler handler = new DataHandler();
-    RegisterFrame registerFrame;
-    ImportFrame importFrame;
-    SignInFrame signInFrame;
-    AppPreferences jsonCompiler = new AppPreferences();
-    int id;
+    // login assets
+    JPanel login;
+    JPanel loginField;
+    JPanel loginFieldButtons;
+    JButton loginButton = new JButton("Register");
+    JTextField loginNameTextField = new JTextField("Surname");
+    JTextField loginEMailTextField = new JTextField("E-Mail");
+    JPasswordField loginPasswordField = new JPasswordField("");
+    JButton loginCancelButton = new JButton("Cancel");
 
+    String password;
+    String eMail;
+    String forename;
+    String name;
 
-    public void addComponentsToPane(Container pane) {
-        pane.setLayout(new BorderLayout());
+    // import assets
+    JPanel importPanel;
+    JTextField importTextField = new JTextField("ISBN");
+    JButton importButton = new JButton("Import");
+    JButton importCancelButton = new JButton("Cancel");
+
+    private JPanel welcomeScreen(Container pane) {
+        welcome = new JPanel();
+        welcome.setLayout(new GridBagLayout());
+        c = new GridBagConstraints();
+        welcomeRegisterButton = new JButton("register");
+        welcomeRegisterButton.addActionListener(e -> {
+            cl = (CardLayout) pane.getLayout();
+            cl.show(pane, "REGISTER");
+        });
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 1;
+        welcome.add(welcomeRegisterButton, c);
+        welcomeLoginButton = new JButton("Login");
+        welcomeLoginButton.addActionListener(e -> {
+            cl = (CardLayout) pane.getLayout();
+            cl.show(pane, "LOGIN");
+        });
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 1;
+        c.gridy = 1;
+        welcome.add(welcomeLoginButton, c);
+        return welcome;
+    }
+
+    private JPanel registerPanel(Container pane){
+        registerPanel = new JPanel();
+        registerPanel.setLayout(new GridBagLayout());
+        c = new GridBagConstraints();
+        f = new Font("Courier", Font.PLAIN, 30);
+
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 0;
+        c.weightx = 0.5;
+        c.weighty = 0.25;
+        c.ipady = 40;
+        registerForenameTextField = new JTextField("Forename");
+        registerForenameTextField.setSize(registerPanel.getWidth(),14);
+        registerForenameTextField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if(registerForenameTextField.getText().equals("Forename")){
+                    registerForenameTextField.setText("");
+                }
+            }
+        });
+        registerForenameTextField.setFont(f);
+        registerPanel.add(registerForenameTextField, c);
+
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 1;
+        c.weightx = 0.5;
+        c.weighty = 0.25;
+        c.ipady = 40;
+        registerNameTextField = new JTextField("Surname");
+        registerNameTextField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if(registerNameTextField.getText().equals("Surname")){
+                    registerNameTextField.setText("");
+                }
+            }
+        });
+        registerNameTextField.setFont(f);
+        registerPanel.add(registerNameTextField, c);
+
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 2;
+        c.weightx = 0.5;
+        c.weighty = 0.25;
+        c.ipady = 40;
+        registerEMailTextField = new JTextField("E-Mail");
+        registerEMailTextField.setSize(registerPanel.getWidth(),14);
+        registerEMailTextField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if(registerEMailTextField.getText().equals("E-Mail")){
+                    registerEMailTextField.setText("");
+                }
+            }
+        });
+        registerEMailTextField.setFont(f);
+        registerPanel.add(registerEMailTextField, c);
+
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 3;
+        c.weightx = 0.5;
+        c.weighty = 0.25;
+        c.ipady = 40;
+        registerPasswordField = new JPasswordField("");
+        registerPasswordField.setFont(f);
+        registerPanel.add(registerPasswordField, c);
+
+        c.gridx = 1;
+        c.gridy = 1;
+        c.weightx = 0.25;
+        c.weighty = 0.3;
+        c.ipady = 20;
+        registerButton = new JButton("Register");
+        registerButton.addActionListener(e -> {
+            try {
+                byte[] salt = security.generateSalt();
+                registerEMail = registerEMailTextField.getText();
+                registerName = registerNameTextField.getText();
+                registerForename = registerForenameTextField.getText();
+                if(handler.checkUserAvailability(registerEMail, registerName)){
+                    String registerPassword = security.base64EncodeString(security.getEncryptedPassword(registerPasswordField.getPassword(), salt));
+                    encrypted = new AppPreferences.Encrypted(registerPassword, security.base64EncodeString(salt));
+                    handler.insertUserData(registerName, registerForename, registerEMail, registerPassword, security.base64EncodeString(salt));
+                    user = new AppPreferences.User(registerEMail, registerName, registerForename, encrypted);
+                    deposit.storeUserData(user);
+                    System.out.println("user data stored");
+                    // switch cards
+                    cl = (CardLayout) pane.getLayout();
+                    cl.show(pane, "MAIN");
+                }
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
+                e1.printStackTrace();
+            }
+
+        });
+        registerPanel.add(registerButton, c);
+
+        c.gridx = 1;
+        c.gridy = 2;
+        c.weightx = 0.25;
+        c.weighty = 0.3;
+        c.ipady = 20;
+        registerCancelButton = new JButton("Cancel");
+        registerCancelButton.addActionListener(e -> {
+            registerForenameTextField.setText("Forename");
+            registerNameTextField.setText("Surname");
+            registerPasswordField.setText("");
+            cl = (CardLayout) pane.getLayout();
+            cl.show(pane, "WELCOME");
+        });
+        registerPanel.add(registerCancelButton, c);
+        return registerPanel;
+    }
+
+    private JPanel mainPanel(Container pane){
+        mainPanel = new JPanel();
+        mainPanel.setLayout(new BorderLayout());
         updateID();
-        importFrame = new ImportFrame();
-        pane.add(importFrame);
-        signInFrame = new SignInFrame(this);
-        pane.add(signInFrame);
 
-        menuBar = new JMenuBar();
-        menu = new JMenu("Menu");
-        menuItem = new JMenuItem("Books");
-        menuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                updateTable(table);
-            }
+        menuPanel = new JPanel();
+        menuBooks = new JButton("Refresh");
+        menuBooks.addActionListener(e -> updateTable(table));
+        menuPanel.add(menuBooks);
+        menuImport = new JButton("Import book");
+        menuImport.addActionListener(e -> {
+            cl = (CardLayout) pane.getLayout();
+            cl.show(pane, "IMPORT");
         });
-        menu.add(menuItem);
-        menuItem = new JMenuItem("Import book");
-        menuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                importFrame.setVisible(true);
-            }
-        });
-        menu.add(menuItem);
-        menuItem = new JMenuItem("Sign in");
-        menuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                signInFrame.setVisible(true);
-            }
-        });
-        menu.add(menuItem);
-        menuBar.add(menu);
+        menuPanel.add(menuImport);
+
 
         table = new JTable(new DefaultTableModel(null, columnNames));
         table.setAutoCreateRowSorter(true);
         updateTable(table);
-        table.setFont(new Font(DIALOG , ITALIC, 18));
+        table.setFont(new Font(DIALOG, ITALIC, 18));
 
         scrollPane = new JScrollPane(table);
         table.setFillsViewportHeight(true);
 
-        t1.setFont(new Font( MONOSPACED, 142, 15));
-        t1.setForeground(new Color(28, 103, 214));
-        t1.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        searchTextField.setFont(new Font(MONOSPACED, 142, 15));
+        searchTextField.setForeground(new Color(28, 103, 214));
+        searchTextField.addActionListener(e -> {
+        });
+        searchTextField.addFocusListener(new FocusListener() {
+            public void focusGained(FocusEvent e) {
+            }
+            public void focusLost(FocusEvent e) {
             }
         });
-        t1.addFocusListener(new FocusListener() {
-            public void focusGained(FocusEvent e) {
-                }
-                public void focusLost(FocusEvent e) {
-                }
-            });
-        t1.addMouseListener(new MouseListener() {
-                @Override
-                public void mouseClicked(MouseEvent e) {}
-                @Override
-                public void mousePressed(MouseEvent e) {}
-                @Override
-                public void mouseReleased(MouseEvent e) {}
-                @Override
-                public void mouseEntered(MouseEvent e) {}
-                @Override
-                public void mouseExited(MouseEvent e) {}
-            });
-            b2.setFont(new Font( MONOSPACED, 142, 15));
-            b2.setForeground(new Color(28, 103, 214));
-            b2.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
+        searchTextField.addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {}
+            @Override
+            public void mousePressed(MouseEvent e) {}
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+            @Override
+            public void mouseEntered(MouseEvent e) {}
+            @Override
+            public void mouseExited(MouseEvent e) {}
+        });
+        searchButton.setFont(new Font( MONOSPACED, 142, 15));
+        searchButton.setForeground(new Color(28, 103, 214));
+        searchButton.addActionListener(e -> { });
 
-                }
-            });
-            b3.setFont(new Font( MONOSPACED, 142, 15));
-            b3.setForeground(new Color(28, 103, 214));
-            b3.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                }
-            });
-
-            JPanel interactivePane = new JPanel();
-            interactivePane.setLayout(new BorderLayout());
-            JPanel buttonPane = new JPanel();
-            buttonPane.setLayout(new BoxLayout(buttonPane,
-                    BoxLayout.LINE_AXIS));
-            buttonPane.add(b2);
-            buttonPane.add(b3);
-            buttonPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-            interactivePane.add(buttonPane, BorderLayout.PAGE_END);
-            interactivePane.add(t1, BorderLayout.PAGE_START);
-            pane.add(scrollPane, BorderLayout.PAGE_START);
-            pane.add(interactivePane, BorderLayout.CENTER);
-        }
-
-        public void updateTable(JTable table1){
-            try {
-                table1.setModel(handler.bookData(table1.getModel(), id));
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-
-        private void createAndShowGUI() {
-            //Create and set up the window.
-            JFrame frame;
-
-            frame = new JFrame("LibraryDesktop");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            //Set up the content pane.
-            addComponentsToPane(frame.getContentPane());
-
-            frame.setJMenuBar(menuBar);
-
-            //Size and display the window.
-            Insets insets = frame.getInsets();
-            frame.setSize(800 + insets.left + insets.right, 550 + insets.top + insets.bottom);
-            frame.setVisible(true);
-        }
-
-        public void updateID(){
-            id = handler.getId(jsonCompiler.getEMail(), jsonCompiler.getPassword());
-        }
-
-        public Main(){
-            javax.swing.SwingUtilities.invokeLater(() -> createAndShowGUI());
-        }
-
-
-}
-
-class RegisterFrame extends JFrame {
-    RegisterFrame one;
-
-    JButton registerButton = new JButton("Register");
-    JTextField EMailTextField = new JTextField("E-Mail");
-    JTextField ForenameTextField = new JTextField("Forename");
-    JTextField NameTextField = new JTextField("Name");
-    JPasswordField passwordField = new JPasswordField("");
-    JPanel field;
-    JPanel field2;
-    JPanel fieldButtons;
-
-    DataHandler handler = new DataHandler();
-    static AppPreferences deposit = new AppPreferences();
-    AppPreferences.User user;
-    AppPreferences.Encrypted encrypted;
-    PasswordEncryptionService security = new PasswordEncryptionService();
-    String password;
-    String eMail;
-    String name;
-    String forename;
-
-    public RegisterFrame(){
-        javax.swing.SwingUtilities.invokeLater(() -> createAndShowGUI());
+        JPanel interactivePane = new JPanel();
+        interactivePane.setLayout(new BorderLayout());
+        JPanel buttonPane = new JPanel();
+        buttonPane.setLayout(new BoxLayout(buttonPane,
+                BoxLayout.LINE_AXIS));
+        buttonPane.add(searchButton);
+        buttonPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        interactivePane.add(buttonPane, BorderLayout.PAGE_END);
+        interactivePane.add(searchTextField, BorderLayout.PAGE_START);
+        mainPanel.add(menuPanel, BorderLayout.PAGE_START);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        mainPanel.add(interactivePane, BorderLayout.PAGE_END);
+        return mainPanel;
     }
 
-    private void createAndShowGUI() {
+    private JPanel loginPanel(Container pane){
+        login = new JPanel();
+        login.setLayout(new BoxLayout(login, BoxLayout.PAGE_AXIS));
+        f = new Font("Courier", Font.PLAIN, 30);
+
+        loginField = new JPanel(new BorderLayout());
+        loginNameTextField = new JTextField("Surname");
+        loginNameTextField.setSize(login.getWidth(),14);
+        loginNameTextField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if(loginNameTextField.getText().equals("Surname")){
+                    loginNameTextField.setText("");
+                }
+            }
+        });
+        loginNameTextField.setFont(f);
+        loginField.add(loginNameTextField, BorderLayout.CENTER);
+
+        loginEMailTextField = new JTextField("E-Mail");
+        loginEMailTextField.setSize(login.getWidth(),14);
+        loginEMailTextField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if(loginEMailTextField.getText().equals("E-Mail")){
+                    loginEMailTextField.setText("");
+                }
+            }
+        });
+        loginEMailTextField.setFont(f);
+        loginField.add(loginEMailTextField, BorderLayout.NORTH);
+
+        loginPasswordField = new JPasswordField("");
+        loginPasswordField.setFont(f);
+        loginPasswordField.setSize(login.getWidth(),14);
+        loginField.add(loginPasswordField, BorderLayout.SOUTH);
+
+        login.add(loginField);
+
+        loginFieldButtons = new JPanel(new FlowLayout());
+
+        loginButton = new JButton("Login");
+        loginButton.addActionListener(e -> {
+            String salt = handler.getSalt(loginNameTextField.getText(), loginEMailTextField.getText());
+            try {
+                if(salt!=null) {
+                    char[] typed = loginPasswordField.getPassword();
+                    password = security.base64EncodeString(security.getEncryptedPassword(typed, security.base64DecodeString(salt)));
+                    eMail = loginEMailTextField.getText();
+                    name = loginNameTextField.getText();
+                    if (security.authenticate(typed, security.base64Decode(handler.getPassword(name, eMail)), security.base64DecodeString(handler.getSalt(name, eMail)))) {
+                        forename = handler.getForename(eMail);
+                        encrypted = new AppPreferences.Encrypted(password, salt);
+                        user = new AppPreferences.User(eMail, name, forename, encrypted);
+                        deposit.storeUserData(user);
+                        updateID();
+                        cl = (CardLayout) pane.getLayout();
+                        cl.show(pane, "MAIN");
+                    } else {
+                        System.out.println("Password or eMail incorrect");
+                    }
+                }
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
+                e1.printStackTrace();
+            }
+
+        });
+        loginFieldButtons.add(loginButton);
+
+        loginCancelButton = new JButton("Cancel");
+        loginCancelButton.addActionListener(e -> {
+            cl = (CardLayout) pane.getLayout();
+            cl.show(pane, "WELCOME");
+        });
+        loginFieldButtons.add(loginCancelButton);
+        login.add(loginFieldButtons);
+        return login;
+    }
+
+    private JPanel importPanel(Container pane){
+        importPanel = new JPanel();
+        importPanel.setLayout(new BorderLayout());
+        importTextField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                importTextField.setText("");
+            }
+        });
+        importPanel.add(importTextField, BorderLayout.NORTH);
+        importButton.addActionListener(e -> {
+            handler.importBook(importTextField.getText(), id);
+            updateTable(table);
+            cl = (CardLayout) pane.getLayout();
+            cl.show(pane, "MAIN");
+        });
+        importPanel.add(importButton, BorderLayout.CENTER);
+        importCancelButton.addActionListener(e -> {
+            importTextField.setText("ISBN");
+            updateTable(table);
+            cl = (CardLayout) pane.getLayout();
+            cl.show(pane, "MAIN");
+        });
+        importPanel.add(importCancelButton, BorderLayout.EAST);
+        return importPanel;
+    }
+
+    private void addComponentsToPane(Container pane) {
+        pane.setLayout(new CardLayout());
+        pane.add(welcomeScreen(pane), "WELCOME");
+        pane.add(registerPanel(pane), "REGISTER");
+        pane.add(loginPanel(pane), "LOGIN");
+        pane.add(mainPanel(pane), "MAIN");
+        pane.add(importPanel(pane), "IMPORT");
+    }
+
+    private void updateTable(JTable table1){
+        try {
+            table1.setModel(handler.bookData(table1.getModel(), id));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createAndShowGUI(String condition) {
         //Create and set up the window.
         JFrame frame;
+        handler.run();
 
         frame = new JFrame("LibraryDesktop");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                frame.dispose();
+                System.exit(0);
+                handler.close();
+            }
+        });
         //Set up the content pane.
+
         addComponentsToPane(frame.getContentPane());
+        cl = (CardLayout) frame.getContentPane().getLayout();
+        cl.show(frame.getContentPane(), condition);
 
         //Size and display the window.
         Insets insets = frame.getInsets();
@@ -211,83 +444,26 @@ class RegisterFrame extends JFrame {
         frame.setVisible(true);
     }
 
-    public void addComponentsToPane(Container pane) {
-        one = this;
-        setSize(350, 180);
-        setLocation(30, 30);
-        pane.setLayout(new BoxLayout(pane,BoxLayout.PAGE_AXIS));
-        field = new JPanel(new BorderLayout());
-        ForenameTextField.setSize(pane.getWidth(),14);
-        ForenameTextField.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                ForenameTextField.setText("");
-            }
+    private void updateID(){
+        try {
+            id = handler.getId(jsonCompiler.getEMail(), jsonCompiler.getPassword());
+        } catch(Exception e) {
+            id = 0;
+        }
+    }
 
-        });
-        field.add(ForenameTextField, BorderLayout.NORTH);
-        NameTextField.setSize(pane.getWidth(),14);
-        NameTextField.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                NameTextField.setText("");
-            }
-        });
-        field.add(NameTextField, BorderLayout.SOUTH);
-        field2 = new JPanel(new BorderLayout());
-        EMailTextField.setSize(pane.getWidth(),14);
-        EMailTextField.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                EMailTextField.setText("");
-            }
-
-        });
-        field2.add(EMailTextField, BorderLayout.NORTH);
-        passwordField.setSize(pane.getWidth(),14);
-        field2.add(passwordField, BorderLayout.SOUTH);
-        pane.add(field);
-        pane.add(field2);
-        fieldButtons = new JPanel(new BorderLayout());
-        fieldButtons.add(registerButton, BorderLayout.WEST);
-        registerButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    byte[] salt = security.generateSalt();
-                    eMail = EMailTextField.getText();
-                    name = NameTextField.getText();
-                    forename = ForenameTextField.getText();
-                    if(handler.checkUserAvailability(eMail, name)){
-                        password = security.base64Encode(security.getEncryptedPassword(passwordField.getPassword().toString(), salt));
-                        encrypted = new AppPreferences.Encrypted(password, security.base64Encode(salt));
-                        handler.insertUserData(name, forename, eMail, password, security.base64Encode(salt));
-                        user = new AppPreferences.User(eMail, name, forename, encrypted);
-                        deposit.storeUserData(user);
-                        System.out.println("user data stored");
-                    }
-                } catch (NoSuchAlgorithmException e1) {
-                    e1.printStackTrace();
-                } catch (InvalidKeySpecException e1) {
-                    e1.printStackTrace();
-                } catch (SQLException e1) {
-                    e1.printStackTrace();
-                } catch (ClassNotFoundException e1) {
-                    e1.printStackTrace();
-                }
-                new Main();
-                one.dispose();
-            }
-        });
-        pane.add(fieldButtons);
+    private Main(String condition){
+        updateID();
+        createAndShowGUI(condition);
     }
 
     public static void main(String[] args) {
+        String condition;
         if(deposit.testFile()){
-            new RegisterFrame();
+            condition = "MAIN";
         } else {
-            new Main();
+            condition = "WELCOME";
         }
-
+        new Main(condition);
     }
 }
