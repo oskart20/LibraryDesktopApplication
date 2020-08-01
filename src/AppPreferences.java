@@ -50,12 +50,6 @@ public class AppPreferences {
         return file.length()>2;
     }
 
-    public boolean fetchUserData(){
-        File file = new File(filePath);
-
-        return false;
-    }
-
     public static class User {
         private String EMail;
         private String name;
