@@ -1,6 +1,5 @@
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-
 import java.io.*;
 
 public class AppPreferences {

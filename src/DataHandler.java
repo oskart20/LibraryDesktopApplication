@@ -4,6 +4,7 @@ import java.sql.*;
 import java.util.Vector;
 
 public class DataHandler implements Runnable {
+
     Connection connection = null;
     String url = "";
     String user = "";
@@ -204,7 +205,7 @@ public class DataHandler implements Runnable {
             connection = DriverManager.getConnection(url, user, password);
             System.out.println("Connection successful");
         }   catch(Exception e) {
-            System.out.println("checkUserAvailability(): " + e);
+            System.out.println("run(): " + e);
         }
     }
 
@@ -212,7 +213,7 @@ public class DataHandler implements Runnable {
         try {
             connection.close();
         }   catch(Exception e) {
-            System.out.println("checkUserAvailability(): " + e);
+            System.out.println("close(): " + e);
         }
     }
 }
