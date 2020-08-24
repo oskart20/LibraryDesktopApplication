@@ -10,12 +10,19 @@ public class DataHandler implements Runnable {
     String user = "";
     String password = "";
 
-
-    public TableModel bookData(TableModel model, int id) {
+    public TableModel bookData(TableModel model, int id, String condition) {
         TableModel tableModel = model;
         try {
             Statement stmt=connection.createStatement();
-            ResultSet rs=stmt.executeQuery("SELECT Books.ISBN, Title, Author, ReleaseDate, Pagecount FROM Books, Relationship WHERE Relationship.ISBN=Books.ISBN AND Relationship.ID="+id+" GROUP BY Books.ISBN;");
+            String query = String.format("SELECT Books.ISBN, Title, Author, ReleaseDate, Pagecount FROM " +
+                    "Books, Relationship WHERE Relationship.ISBN=Books.ISBN AND Relationship.ID=%1$s GROUP BY Books.ISBN;", id);
+            if(!condition.equals("")) {
+                String conditionAppended = "%" + condition + "%";
+                query = String.format("SELECT Books.ISBN, Title, Author, ReleaseDate, Pagecount FROM Books, Relationship " +
+                        "WHERE Relationship.ISBN=Books.ISBN AND Relationship.ID=%1$s AND Books.ISBN LIKE '%2$s' OR Title LIKE '%2$s' " +
+                        "OR Author LIKE '%2$s' OR ReleaseDate='%3$s' GROUP BY Books.ISBN;", id, conditionAppended, condition);
+            }
+            ResultSet rs=stmt.executeQuery(query);
             tableModel = buildTableModel(rs);
         }   catch(Exception e) {
             System.out.println("bookData(): " + e);
@@ -59,7 +66,7 @@ public class DataHandler implements Runnable {
     public void importBook(String isbn, int id){
         String[] data = new Json(isbn).getGsonBookData();
         try {
-            if(checkISBN(isbn)){
+            if(checkISBN(isbn)) {
                 Statement stmt = connection.createStatement();
                 stmt.executeUpdate("INSERT INTO Books (ISBN, Title, Author, ReleaseDate, Pagecount) VALUES ("+isbn+", '"+data[0]+"', '"+data[1]+"', '"+data[2]+"', "+data[3]+");");
             }

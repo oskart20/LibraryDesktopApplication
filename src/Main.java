@@ -253,7 +253,7 @@ public class Main {
 
             menuPanel = new JPanel();
             menuBooks = new JButton("Refresh");
-            menuBooks.addActionListener(e -> updateTable(table));
+            menuBooks.addActionListener(e -> updateTable(table, searchTextField.getText()));
             menuPanel.add(menuBooks);
             menuImport = new JButton("Import book");
             menuImport.addActionListener(e -> {
@@ -265,7 +265,7 @@ public class Main {
 
             table = new JTable(new DefaultTableModel(null, columnNames));
             table.setAutoCreateRowSorter(true);
-            updateTable(table);
+            updateTable(table, searchTextField.getText());
             table.setFont(new Font(DIALOG, ITALIC, 18));
 
             scrollPane = new JScrollPane(table);
@@ -273,29 +273,11 @@ public class Main {
 
             searchTextField.setFont(new Font(MONOSPACED, 142, 15));
             searchTextField.setForeground(new Color(28, 103, 214));
-            searchTextField.addActionListener(e -> {
-            });
-            searchTextField.addFocusListener(new FocusListener() {
-                public void focusGained(FocusEvent e) {
-                }
-                public void focusLost(FocusEvent e) {
-                }
-            });
-            searchTextField.addMouseListener(new MouseListener() {
-                @Override
-                public void mouseClicked(MouseEvent e) {}
-                @Override
-                public void mousePressed(MouseEvent e) {}
-                @Override
-                public void mouseReleased(MouseEvent e) {}
-                @Override
-                public void mouseEntered(MouseEvent e) {}
-                @Override
-                public void mouseExited(MouseEvent e) {}
-            });
             searchButton.setFont(new Font( MONOSPACED, 142, 15));
             searchButton.setForeground(new Color(28, 103, 214));
-            searchButton.addActionListener(e -> { });
+            searchButton.addActionListener(e -> {
+                updateTable(table, searchTextField.getText());
+            });
 
             JPanel interactivePane = new JPanel();
             interactivePane.setLayout(new BorderLayout());
@@ -455,14 +437,14 @@ public class Main {
             this.add(importTextField, BorderLayout.NORTH);
             importButton.addActionListener(e -> {
                 handler.importBook(importTextField.getText(), id);
-                updateTable(mainPanel.table);
+                updateTable(mainPanel.table, "");
                 cl = (CardLayout) pane.getLayout();
                 cl.show(pane, "MAIN");
             });
             this.add(importButton, BorderLayout.CENTER);
             importCancelButton.addActionListener(e -> {
                 importTextField.setText("ISBN");
-                updateTable(mainPanel.table);
+                updateTable(mainPanel.table, "");
                 cl = (CardLayout) pane.getLayout();
                 cl.show(pane, "MAIN");
             });
@@ -506,9 +488,9 @@ public class Main {
         pane.add(importPanel, "IMPORT");
     }
 
-    private void updateTable(JTable table1){
+    private void updateTable(JTable table1, String condition){
         try {
-            table1.setModel(handler.bookData(table1.getModel(), id));
+            table1.setModel(handler.bookData(table1.getModel(), id, condition));
         } catch (Exception e) {
             e.printStackTrace();
         }
