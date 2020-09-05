@@ -8,23 +8,20 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.xml.bind.DatatypeConverter;
 
-public class PasswordEncryptionService {
+public class PasswordHashingService {
 
-    public boolean authenticate(char[] attemptedPassword, byte[] encryptedPassword, byte[] salt)
+    public boolean authenticate(char[] attemptedPassword, byte[] hashedPassword, byte[] salt)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
-        // Encrypt the clear-text password using the same salt that was used to
+        // Hash the clear-text password using the same salt that was used to
         // encrypt the original password
-        byte[] encryptedAttemptedPassword = getEncryptedPassword(attemptedPassword, salt);
+        byte[] hashedAttemptedPassword = getHashedPassword(attemptedPassword, salt);
 
-        // Authentication succeeds if encrypted password that the user entered
+        // Authentication succeeds if hashed password that the user entered
         // is equal to the stored hash
-        System.out.println(Arrays.equals(encryptedPassword, encryptedAttemptedPassword));
-        System.out.println(Arrays.toString(encryptedPassword));
-        System.out.println(Arrays.toString(encryptedAttemptedPassword));
-        return Arrays.equals(encryptedPassword, encryptedAttemptedPassword);
+        return Arrays.equals(hashedPassword, hashedAttemptedPassword);
     }
 
-    public byte[] getEncryptedPassword(char[] password, byte[] salt)
+    public byte[] getHashedPassword(char[] password, byte[] salt)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         // PBKDF2 with SHA-1 as the hashing algorithm
         String algorithm = "PBKDF2WithHmacSHA1";

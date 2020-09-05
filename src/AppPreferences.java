@@ -32,7 +32,7 @@ public class AppPreferences {
 
     public String getPassword(){
         User json;
-        Encrypted encrypted;
+        Hashed hashed;
         JsonReader reader = null;
         try {
             reader = new JsonReader(new FileReader(filePath));
@@ -40,8 +40,8 @@ public class AppPreferences {
             e.printStackTrace();
         }
         json = new Gson().fromJson(reader, User.class);
-        encrypted = json.encrypted;
-        return (encrypted.password);
+        hashed = json.hashed;
+        return (hashed.password);
     }
 
     public boolean testFile(){
@@ -53,22 +53,22 @@ public class AppPreferences {
         private String EMail;
         private String name;
         private String forename;
-        private Encrypted encrypted;
+        private Hashed hashed;
 
-        public User(String EMail, String name, String forename, Encrypted encrypted) {
+        public User(String EMail, String name, String forename, Hashed hashed) {
             this.EMail = EMail;
             this.name = name;
             this.forename = forename;
-            this.encrypted = encrypted;
+            this.hashed = hashed;
         }
 
     }
 
-    public static class Encrypted {
+    public static class Hashed {
         private String password;
         private String salt;
 
-        public Encrypted(String password, String salt) {
+        public Hashed(String password, String salt) {
             this.password = password;
             this.salt = salt;
         }

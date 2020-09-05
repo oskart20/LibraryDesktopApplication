@@ -12,17 +12,18 @@ public class DataHandler implements Runnable {
 
     public TableModel bookData(TableModel model, int id, String condition) {
         TableModel tableModel = model;
+        condition = condition.trim();
         try {
             Statement stmt=connection.createStatement();
-            String query = String.format("SELECT Books.ISBN, Title, Author, ReleaseDate, Pagecount FROM " +
-                    "Books, Relationship WHERE Relationship.ISBN=Books.ISBN AND Relationship.ID=%1$s GROUP BY Books.ISBN;", id);
-            if(!condition.equals("")) {
+            String query = String.format("SELECT Books.ISBN, Title, Author, ReleaseDate, Pagecount FROM Books, Relationship " +
+                    "WHERE Relationship.ISBN = Books.ISBN AND Relationship.ID = %1$s GROUP BY Books.ISBN;", id);
+            if (!(condition.equals(""))) {
                 String conditionAppended = "%" + condition + "%";
                 query = String.format("SELECT Books.ISBN, Title, Author, ReleaseDate, Pagecount FROM Books, Relationship " +
-                        "WHERE Relationship.ISBN=Books.ISBN AND Relationship.ID=%1$s AND Books.ISBN LIKE '%2$s' OR Title LIKE '%2$s' " +
-                        "OR Author LIKE '%2$s' OR ReleaseDate='%3$s' GROUP BY Books.ISBN;", id, conditionAppended, condition);
+                        "WHERE Relationship.ISBN = Books.ISBN AND Relationship.ID = %1$s AND Books.ISBN LIKE '%2$s' OR Title LIKE '%2$s' " +
+                        "OR Author LIKE '%2$s' OR ReleaseDate = '%3$s' GROUP BY Books.ISBN;", id, conditionAppended, condition);
             }
-            ResultSet rs=stmt.executeQuery(query);
+            ResultSet rs = stmt.executeQuery(query);
             tableModel = buildTableModel(rs);
         }   catch(Exception e) {
             System.out.println("bookData(): " + e);
@@ -64,8 +65,8 @@ public class DataHandler implements Runnable {
     }
 
     public void importBook(String isbn, int id){
-        String[] data = new Json(isbn).getGsonBookData();
         try {
+            String[] data = new Json(isbn).getGsonBookData();
             if(checkISBN(isbn)) {
                 Statement stmt = connection.createStatement();
                 stmt.executeUpdate("INSERT INTO Books (ISBN, Title, Author, ReleaseDate, Pagecount) VALUES ("+isbn+", '"+data[0]+"', '"+data[1]+"', '"+data[2]+"', "+data[3]+");");
@@ -74,7 +75,6 @@ public class DataHandler implements Runnable {
                 Statement statement = connection.createStatement();
                 statement.executeUpdate("INSERT INTO Relationship (ID, ISBN, Number) VALUES (" + id + ", " + isbn + ", 1);");
             }
-            //todo: increase number by 1
         }   catch(Exception e) {
             System.out.println("importBook(): " + e);
         }

@@ -21,8 +21,8 @@ public class Main {
 
     static AppPreferences deposit = new AppPreferences();
     AppPreferences.User user;
-    AppPreferences.Encrypted encrypted;
-    PasswordEncryptionService security = new PasswordEncryptionService();
+    AppPreferences.Hashed hashed;
+    PasswordHashingService security = new PasswordHashingService();
 
     //threads
     private WelcomeScreen welcome;
@@ -176,10 +176,10 @@ public class Main {
                     registerName = registerNameTextField.getText();
                     registerForename = registerForenameTextField.getText();
                     if(handler.checkUserAvailability(registerEMail, registerName)){
-                        String registerPassword = security.base64EncodeString(security.getEncryptedPassword(registerPasswordField.getPassword(), salt));
-                        encrypted = new AppPreferences.Encrypted(registerPassword, security.base64EncodeString(salt));
+                        String registerPassword = security.base64EncodeString(security.getHashedPassword(registerPasswordField.getPassword(), salt));
+                        hashed = new AppPreferences.Hashed(registerPassword, security.base64EncodeString(salt));
                         handler.insertUserData(registerName, registerForename, registerEMail, registerPassword, security.base64EncodeString(salt));
-                        user = new AppPreferences.User(registerEMail, registerName, registerForename, encrypted);
+                        user = new AppPreferences.User(registerEMail, registerName, registerForename, hashed);
                         deposit.storeUserData(user);
                         System.out.println("user data stored");
                         welcome.stop();
@@ -253,7 +253,7 @@ public class Main {
 
             menuPanel = new JPanel();
             menuBooks = new JButton("Refresh");
-            menuBooks.addActionListener(e -> updateTable(table, searchTextField.getText()));
+            menuBooks.addActionListener(e -> updateTable(table, ""));
             menuPanel.add(menuBooks);
             menuImport = new JButton("Import book");
             menuImport.addActionListener(e -> {
@@ -275,9 +275,7 @@ public class Main {
             searchTextField.setForeground(new Color(28, 103, 214));
             searchButton.setFont(new Font( MONOSPACED, 142, 15));
             searchButton.setForeground(new Color(28, 103, 214));
-            searchButton.addActionListener(e -> {
-                updateTable(table, searchTextField.getText());
-            });
+            searchButton.addActionListener(e -> updateTable(table, searchTextField.getText()));
 
             JPanel interactivePane = new JPanel();
             interactivePane.setLayout(new BorderLayout());
@@ -370,13 +368,13 @@ public class Main {
                 try {
                     if(salt!=null) {
                         char[] typed = loginPasswordField.getPassword();
-                        password = security.base64EncodeString(security.getEncryptedPassword(typed, security.base64DecodeString(salt)));
+                        password = security.base64EncodeString(security.getHashedPassword(typed, security.base64DecodeString(salt)));
                         eMail = loginEMailTextField.getText();
                         name = loginNameTextField.getText();
                         if (security.authenticate(typed, security.base64Decode(handler.getPassword(name, eMail)), security.base64DecodeString(handler.getSalt(name, eMail)))) {
                             forename = handler.getForename(eMail);
-                            encrypted = new AppPreferences.Encrypted(password, salt);
-                            user = new AppPreferences.User(eMail, name, forename, encrypted);
+                            hashed = new AppPreferences.Hashed(password, salt);
+                            user = new AppPreferences.User(eMail, name, forename, hashed);
                             deposit.storeUserData(user);
                             updateID();
                             welcome.stop();
